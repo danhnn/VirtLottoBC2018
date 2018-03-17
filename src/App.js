@@ -12,27 +12,31 @@ class App extends Component {
     super(props)
 
     this.state = {
-      storageValue: 0,
-      web3: null
+      web3: null,
+      lastWinner: 0,
+      timer: 0
     }
+  }
+
+  voteNumber(number) {
+    console.log(number)
   }
 
   componentWillMount() {
     // Get network provider and web3 instance.
     // See utils/getWeb3 for more info.
-
     getWeb3
-    .then(results => {
-      this.setState({
-        web3: results.web3
-      })
+      .then(results => {
+        this.setState({
+          web3: results.web3
+        })
 
-      // Instantiate contract once web3 provided.
-      this.instantiateContract()
-    })
-    .catch(() => {
-      console.log('Error finding web3.')
-    })
+        // Instantiate contract once web3 provided.
+        //this.instantiateContract()
+      })
+      .catch(() => {
+        console.log('Error finding web3.')
+      })
   }
 
   instantiateContract() {
@@ -55,7 +59,7 @@ class App extends Component {
       simpleStorage.deployed().then((instance) => {
         simpleStorageInstance = instance
         // Stores a given value, 5 by default.
-        return simpleStorageInstance.set(5, {from: accounts[0]})
+        return simpleStorageInstance.set(5, { from: accounts[0] })
       }).then((result) => {
         // Get the value from the contract to prove it worked.
         return simpleStorageInstance.get.call(accounts[0])
@@ -68,25 +72,36 @@ class App extends Component {
 
   render() {
     return (
-      <div className="App">
-        <nav className="navbar pure-menu pure-menu-horizontal">
-            <a href="#" className="pure-menu-heading pure-menu-link">Truffle Box</a>
-        </nav>
+      <div className="main-container">
+        <h1>Bet for your best number and win huge amounts of Ether</h1>
 
-        <main className="container">
-          <div className="pure-g">
-            <div className="pure-u-1-1">
-              <h1>Good to Go!</h1>
-              <p>Your Truffle Box is installed and ready.</p>
-              <h2>Smart Contract Example</h2>
-              <p>If your contracts compiled and migrated successfully, below will show a stored value of 5 (by default).</p>
-              <p>Try changing the value stored on <strong>line 59</strong> of App.js.</p>
-              <p>The stored value is: {this.state.storageValue}</p>
-            </div>
-          </div>
-        </main>
+        <div className="block">
+          <h4>Timer:</h4> &nbsp;
+            <span ref="timer"> {this.state.timer}</span>
+        </div>
+
+        <div className="block">
+          <h4>Last winner:</h4> &nbsp;
+            <span ref="last-winner">{this.state.lastWinner}</span>
+        </div>
+
+        <hr />
+
+        <h2>Vote for the next number</h2>
+        <ul>
+          <li onClick={() => { this.voteNumber(1) }}>1</li>
+          <li onClick={() => { this.voteNumber(2) }}>2</li>
+          <li onClick={() => { this.voteNumber(3) }}>3</li>
+          <li onClick={() => { this.voteNumber(4) }}>4</li>
+          <li onClick={() => { this.voteNumber(5) }}>5</li>
+          <li onClick={() => { this.voteNumber(6) }}>6</li>
+          <li onClick={() => { this.voteNumber(7) }}>7</li>
+          <li onClick={() => { this.voteNumber(8) }}>8</li>
+          <li onClick={() => { this.voteNumber(9) }}>9</li>
+          <li onClick={() => { this.voteNumber(10) }}>10</li>
+        </ul>
       </div>
-    );
+    )
   }
 }
 
