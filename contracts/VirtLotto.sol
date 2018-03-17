@@ -22,7 +22,6 @@ contract VirtLotto {
     owner = msg.sender;
     minimumBet = _minimumBet;
     totalCalls = _totalCalls;
-    currentCalls = 0;
   }
 
   function checkMinimumBet(uint bet) public view {

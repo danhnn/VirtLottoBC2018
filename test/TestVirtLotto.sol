@@ -8,7 +8,7 @@ contract TestVirtLotto {
   VirtLotto virtLotto;
 
   function beforeAll() public {
-    virtLotto = VirtLotto(DeployedAddresses.VirtLotto(),10,2);
+  
   }
 
   function testCheckMinimumBet() public {

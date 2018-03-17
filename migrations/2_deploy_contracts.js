@@ -1,5 +1,5 @@
-var SimpleStorage = artifacts.require("./VirtLotto.sol");
+var VirtLotto = artifacts.require("./VirtLotto.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(SimpleStorage);
+  deployer.deploy(VirtLotto);
 };
