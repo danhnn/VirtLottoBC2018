@@ -15,14 +15,14 @@ class App extends Component {
     this.state = {
       web3: null,
       lastWinner: 0,
-      numberOfBets: 0,
+      totalCalls: 0,
       minimumBet: 0,
       totalBet: 0,
-      currentTickets: 0,
+      currentCalls: 0,
     }
   }
 
-  voteNumber(number, cb) {
+  voteNumber(number) {
     console.log(number)
     let bet = this.refs['ether-bet'].value
     if (!bet) bet = 0.1
@@ -31,11 +31,14 @@ class App extends Component {
       alert('You must bet more than the minimum')
       this.removeOtherNumberSelected();
     } else {
-      this.state.ContractInstance.bet(number, {
+      console.log("Address = ",this.state.web3.eth.accounts[0])
+      console.log("Bet = ",bet)
+      this.state.ContractInstance.pickNumber(number, {
         gas: 300000,
         from: this.state.web3.eth.accounts[0],
         value: this.state.web3.toWei(bet, 'finney')
       }, (err, result) => {
+        console.log("Pick error = ", err)
         this.removeOtherNumberSelected();
       })
     }
@@ -47,6 +50,46 @@ class App extends Component {
     for (let i = 0; i < liNodes.length; i++) {
       liNodes[i].className = ''
     }
+  }
+
+  componentDidMount() {
+    this.updateState();
+    setInterval(this.updateState.bind(this), 10e3)
+  }
+
+  updateState() {
+    if (!this.state.web3 || !this.state.ContractInstance) {
+      return;
+    }
+ 
+    this.state.ContractInstance.getMinimumBet.call().then((result) => {
+      if (result != null) {
+        this.setState({
+          minimumBet: parseFloat(this.state.web3.fromWei(result, 'ether'))
+        })
+      }
+    })
+    this.state.ContractInstance.getTotalBetValue.call().then((result) => {
+      if (result != null) {
+        this.setState({
+          totalBet: parseFloat(this.state.web3.fromWei(result, 'ether'))
+        })
+      }
+    })
+    this.state.ContractInstance.getTotalCalls.call().then((result) => {
+      if (result != null) {
+        this.setState({
+          totalCalls: parseInt(result)
+        })
+      }
+    })
+    this.state.ContractInstance.getCurrentCall.call().then((result) => {
+      if (result != null) {
+        this.setState({
+          currentCalls: parseInt(result)
+        })
+      }
+    })
   }
 
   componentWillMount() {
@@ -71,46 +114,10 @@ class App extends Component {
     virtLotto.setProvider(this.state.web3.currentProvider)
     virtLotto.deployed().then((instance) => {
       this.setState({
-        ContractInstance: instance
+        ContractInstance : instance
       })
-      //this.state.ContractInstance = instance;
+      this.updateState()
     })
-  }
-
-  // Listen for events and executes the voteNumber method
-  setupListeners() {
-    let liNodes = this.refs.numbers.querySelectorAll('li')
-    liNodes.forEach(number => {
-      number.addEventListener('click', event => {
-        event.target.className = 'number-selected'
-        this.voteNumber(parseInt(event.target.innerHTML), done => {
-
-          // Remove the other number selected
-          for (let i = 0; i < liNodes.length; i++) {
-            liNodes[i].className = ''
-          }
-        })
-      })
-    })
-  }
-
-  voteNumber(number, cb) {
-    let bet = this.refs['ether-bet'].value
-
-    if (!bet) bet = 0.1
-
-    if (parseFloat(bet) < this.state.minimumBet) {
-      alert('You must bet more than the minimum')
-      cb()
-    } else {
-      this.state.ContractInstance.pickNumber(number, {
-        gas: 300000,
-        from: this.state.web3.eth.accounts[0],
-        value: this.state.web3.toWei(bet, 'finney')
-      }, (err, result) => {
-        cb()
-      })
-    }
   }
 
   renderNumber() {
@@ -129,8 +136,13 @@ class App extends Component {
         <h1>Bet for your best number and win huge amounts of Ether</h1>
 
         <div className="block">
-          <b>Number of bets:</b> &nbsp;
-            <span>{this.state.numberOfBets}</span>
+          <b>Total Calls:</b> &nbsp;
+            <span>{this.state.totalCalls}</span>
+        </div>
+
+        <div className="block">
+          <b>Current calls:</b> &nbsp;
+            <span>{this.state.currentCalls}</span>
         </div>
 
         <div className="block">
@@ -139,18 +151,13 @@ class App extends Component {
         </div>
 
         <div className="block">
-          <b>Total finney bet:</b> &nbsp;
-            <span>{this.state.totalBet} finney</span>
+          <b>Total ether bet:</b> &nbsp;
+            <span>{this.state.totalBet} ether</span>
         </div>
 
         <div className="block">
           <b>Minimum bet:</b> &nbsp;
-            <span>{this.state.minimumBet} finney</span>
-        </div>
-
-        <div className="block">
-          <b>Available Tickets:</b> &nbsp;
-            <span>{4 - this.state.currentTickets}</span>
+            <span>{this.state.minimumBet} ether</span>
         </div>
 
         <hr />

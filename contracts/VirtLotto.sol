@@ -8,13 +8,13 @@ contract VirtLotto {
 
   address[] pickers;
 
-  uint minimumBet;
+  uint public minimumBet;
 
-  uint totalCalls;
+  uint public totalCalls;
 
-  uint totalBetValue;
+  uint public totalBetValue;
 
-  uint currentCalls;
+  uint public currentCalls;
 
   uint8 MAX_TICKETS = 4;
 
@@ -24,8 +24,20 @@ contract VirtLotto {
     totalCalls = _totalCalls;
   }
 
-  function checkMinimumBet(uint bet) public view {
-    require(bet >= minimumBet);
+  function getMinimumBet() public constant returns (uint) {
+    return minimumBet;
+  }
+
+  function getTotalCalls() public constant returns (uint) {
+    return totalCalls;
+  }
+
+  function getTotalBetValue() public constant returns (uint) {
+    return totalBetValue;
+  }
+
+  function getCurrentCall() public constant returns (uint) {
+    return currentCalls;
   }
 
   function checkNumberBet(uint number) public pure {
@@ -40,7 +52,6 @@ contract VirtLotto {
 
   function pickNumber(uint number) payable public {
     checkNumberBet(number);
-    checkMinimumBet(msg.value);
     checkTicketsPick(msg.sender);
 
     this.transfer(msg.value); // this represent for contract address pointer. Transfer means we subtract amount of caller.`

@@ -1,1 +1,3 @@
 - Constant keyword is used to mark that function is no required gas cause it just return value from contrac state only.
+
+- Why this.state.ContractInstance.getMinimumBet.call() return promise ? In Lab1, it returns a value
