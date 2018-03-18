@@ -59,8 +59,7 @@ contract VirtLotto {
   function () payable public {}
 
   function pickNumber(uint number) public payable {
-    LogData(number);
-
+    
     checkNumberBet(number);
     checkMinimumBet(msg.value);
     checkTicketsPick(msg.sender);
@@ -101,6 +100,7 @@ contract VirtLotto {
     address[100] memory winnerList;
     uint winNumber = random();
     uint winnerCount = 0;
+    LogData(winNumber);
 
     for (uint i = 0; i < pickers.length; i++) {
         address pickerAddress = pickers[i];

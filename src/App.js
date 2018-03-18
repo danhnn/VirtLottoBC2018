@@ -129,11 +129,7 @@ class App extends Component {
 
   watchEvents() {
     let event = this.state.ContractInstance.LogData();
-    // watch for changes
     event.watch(function(error, result){
-        // result will contain various information
-        // including the argumets given to the Deposit
-        // call.
         if (!error)
             console.log("Log data = ", result.args._value.toString());
     });
