@@ -9,23 +9,31 @@ import './App.css'
 
 class App extends Component {
 
+  INIT_STATE = {
+    web3: null,
+    lastWinner: 0,
+    totalCalls: 0,
+    minimumBet: 0,
+    totalBet: 0,
+    currentCalls: 0,
+    currentTicket: 0,
+    numbersChoose: []
+  }
+
   constructor(props) {
     super(props)
-
-    this.state = {
-      web3: null,
-      lastWinner: 0,
-      totalCalls: 0,
-      minimumBet: 0,
-      totalBet: 0,
-      currentCalls: 0,
-    }
+    this.state = this.INIT_STATE;
   }
 
   voteNumber(number) {
     console.log("Vote for: ",number)
     let bet = this.refs['ether-bet'].value
     if (!bet) bet = 0.1
+
+    if (this.state.currentTicket >= 4) {
+      alert("Maximum tickets is 4! You are out of tickets!")
+      return;
+    }
 
     if (parseFloat(bet) < this.state.minimumBet) {
       alert('You must bet more than the minimum')
@@ -35,17 +43,41 @@ class App extends Component {
       const etherBet = this.state.web3.toWei(bet, 'ether')
       console.log("Address = ",this.state.web3.eth.accounts[0])
       console.log("Bet = ",bet)
+      this.state.numbersChoose.push(number);
+
       this.state.ContractInstance.pickNumber(number, {
         from: address,
+        gas: 400000,
         value: etherBet
       }).then((result) => {
         console.log("pick result = ", result)
-        
+        this.checkWin();
         this.removeOtherNumberSelected();
       }).catch((error) => {
         console.log("pick error = ", error)
       })
     }
+  }
+
+  checkWin() {
+    console.log("Current calls = ",this.state.currentCalls);
+    console.log("total calls = ",this.state.totalCalls);
+    if (this.state.currentCalls === this.state.totalCalls - 1) {
+      this.state.ContractInstance.getLastWinNumber.call().then((result) => {
+        if (result != null) {
+          const winnum = parseInt(result);
+          if(this.state.numbersChoose.includes(winnum)) {
+            let str = "Winning Number is " + winnum + "! Congratulation! You Win!!!";
+            alert(str)
+          }else{
+            let str = "Winning Number is " + winnum + "! Sorry, but can try again!!!";
+            alert(str)
+          }
+          this.setState({ numbersChoose: [] });
+        }
+      })
+    }
+    this.updateState();
   }
 
   removeOtherNumberSelected() {
@@ -58,7 +90,7 @@ class App extends Component {
 
   componentDidMount() {
     this.updateState();
-    setInterval(this.updateState.bind(this), 10e3)
+    setInterval(this.updateState.bind(this), 5000)
   }
 
   updateState() {
@@ -94,6 +126,20 @@ class App extends Component {
         })
       }
     })
+    this.state.ContractInstance.getCurrentTicket.call().then((result) => {
+      if (result != null) {
+        this.setState({
+          currentTicket: parseInt(result)
+        })
+      }
+    })
+    this.state.ContractInstance.getLastWinNumber.call().then((result) => {
+      if (result != null) {
+        this.setState({
+          lastWinner: parseInt(result)
+        })
+      }
+    })
   }
 
   componentWillMount() {
@@ -105,7 +151,7 @@ class App extends Component {
           web3: results.web3
         })
         // Don't know why to set defaul account here
-        this.state.web3.eth.defaultAccount = this.state.web3.eth.accounts[0]
+        //this.state.web3.eth.defaultAccount = this.state.web3.eth.accounts[0]
         // Instantiate contract once web3 provided.
         this.instantiateContract()
       })
@@ -128,10 +174,28 @@ class App extends Component {
   }
 
   watchEvents() {
-    let event = this.state.ContractInstance.LogData();
-    event.watch(function(error, result){
+    let eventNumber = this.state.ContractInstance.LogNumber();
+    eventNumber.watch(function(error, result){
         if (!error)
-            console.log("Log data = ", result.args._value.toString());
+            console.log("Log Number = ", result.args.value.toString());
+    });
+
+    let eventString = this.state.ContractInstance.LogString();
+    eventString.watch((error, result) => {
+        if (!error) {
+            const value = result.args.value;
+            //console.log("Log String = ",value);
+            console.log("Log String = ", this.state.web3.toAscii(value.replace(/\0[\s\S]*$/g,'')));
+        }
+    });
+
+    let eventAddress = this.state.ContractInstance.LogAddress();
+    eventAddress.watch((error, result) => {
+        if (!error) {
+            const value = result.args.value;
+            //console.log("Log String = ",value);
+            console.log("Log Address = ", value);
+        }
     });
   }
 
@@ -161,7 +225,7 @@ class App extends Component {
         </div>
 
         <div className="block">
-          <b>Last number winner:</b> &nbsp;
+          <b>Last win number:</b> &nbsp;
             <span>{this.state.lastWinner}</span>
         </div>
 
@@ -173,6 +237,11 @@ class App extends Component {
         <div className="block">
           <b>Minimum bet:</b> &nbsp;
             <span>{this.state.minimumBet} ether</span>
+        </div>
+
+         <div className="block">
+          <b>Tickets left:</b> &nbsp;
+            <span>{4 - this.state.currentTicket}</span>
         </div>
 
         <hr />

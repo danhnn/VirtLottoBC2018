@@ -16,10 +16,20 @@ contract VirtLotto {
 
   uint public currentCalls;
 
+  uint public lastWinNumber;
+
   uint8 MAX_TICKETS = 4;
 
-  event LogData(
-        uint _value
+  event LogNumber(
+        uint value
+  );
+
+  event LogAddress(
+        address value
+  );
+
+  event LogString(
+        bytes32 value
   );
 
   function VirtLotto(uint _minimumBet, uint _totalCalls) public {
@@ -32,12 +42,20 @@ contract VirtLotto {
     return minimumBet;
   }
 
+  function getLastWinNumber() public constant returns (uint) {
+    return lastWinNumber;
+  }
+
   function getTotalCalls() public constant returns (uint) {
     return totalCalls;
   }
 
   function getTotalBetValue() public constant returns (uint) {
     return totalBetValue;
+  }
+
+  function getCurrentTicket() public constant returns (uint) {
+    return betMap[msg.sender].length;
   }
 
   function getCurrentCall() public constant returns (uint) {
@@ -53,25 +71,25 @@ contract VirtLotto {
   }
 
   function checkTicketsPick(address target) public view {
-    require (betMap[target].length < MAX_TICKETS);
+    require (betMap[target].length <= MAX_TICKETS);
   }
 
   function () payable public {}
 
   function pickNumber(uint number) public payable {
-    
     checkNumberBet(number);
     checkMinimumBet(msg.value);
     checkTicketsPick(msg.sender);
-    
     //this.transfer(msg.value); // this represent for contract address pointer. Transfer means we subtract amount of caller.`
     betMap[msg.sender].push (number);
-    totalBetValue += number;
+    totalBetValue += msg.value;
     addAddressToPickers(msg.sender);
-
-    currentCalls += 1;
     
-    if (currentCalls == totalCalls) {
+    currentCalls += 1;
+    LogNumber(currentCalls);
+    
+    if (currentCalls >= totalCalls) {
+      LogString("Generate Result!");
       getWinners();
       resetState();
     }
@@ -98,10 +116,12 @@ contract VirtLotto {
 
   function getWinners() constant private {
     address[100] memory winnerList;
-    uint winNumber = random();
+    uint winNumber = 3;
     uint winnerCount = 0;
-    LogData(winNumber);
-
+    LogString("Winnumber");
+    LogNumber(winNumber);
+    lastWinNumber = winNumber;
+    
     for (uint i = 0; i < pickers.length; i++) {
         address pickerAddress = pickers[i];
         uint[] storage numberPicks = betMap[pickerAddress];
@@ -114,11 +134,18 @@ contract VirtLotto {
         }
     }
 
-    if (winnerCount == 0)
+    if (winnerCount == 0) {
+      LogString("No Winner");
       return;
+    }
 
+    LogString("We have Winners");
+    
     uint moneyReturn = totalBetValue / winnerCount;
     for (uint k = 0; k < winnerCount; k++) {
+      LogNumber(9999);
+      LogAddress(winnerList[k]);
+      LogNumber(moneyReturn);
       transferMoneyToWinner(winnerList[k], moneyReturn);
     }
   }
