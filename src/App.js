@@ -6,6 +6,8 @@ import './css/oswald.css'
 import './css/open-sans.css'
 import './css/pure-min.css'
 import './App.css'
+import SweetAlert from 'react-bootstrap-sweetalert';
+import background from "./images/background.jpg";
 
 class App extends Component {
 
@@ -17,8 +19,13 @@ class App extends Component {
     totalBet: 0,
     currentCalls: 0,
     currentTicket: 0,
-    numbersChoose: []
+    numbersChoose: [],
+    isShowAlert: false,
+    alertBoxType: 'success',
+    alertBoxTitle: '',
+    alertBoxContent:'',
   }
+
 
   constructor(props) {
     super(props)
@@ -26,23 +33,34 @@ class App extends Component {
   }
 
   voteNumber(number) {
-    console.log("Vote for: ",number)
+    console.log("Vote for: ", number)
     let bet = this.refs['ether-bet'].value
     if (!bet) bet = 0.1
 
     if (this.state.currentTicket >= 4) {
-      alert("Maximum tickets is 4! You are out of tickets!")
+      this.setState({
+        isShowAlert: true,
+        alertBoxType: 'warning',
+        alertBoxTitle: 'Warning!',
+        alertBoxContent:'Maximum tickets is 4! You are out of tickets!',
+      })
       return;
     }
 
     if (parseFloat(bet) < this.state.minimumBet) {
-      alert('You must bet more than the minimum')
+      this.setState({
+        isShowAlert: true,
+        alertBoxType: 'warning',
+        alertBoxTitle: 'Warning!',
+        alertBoxContent:'You must bet more than the minimum',
+      })
+      //alert('You must bet more than the minimum')
       this.removeOtherNumberSelected();
     } else {
       const address = this.state.web3.eth.accounts[0];
       const etherBet = this.state.web3.toWei(bet, 'ether')
-      console.log("Address = ",this.state.web3.eth.accounts[0])
-      console.log("Bet = ",bet)
+      console.log("Address = ", this.state.web3.eth.accounts[0])
+      console.log("Bet = ", bet)
       this.state.numbersChoose.push(number);
 
       this.state.ContractInstance.pickNumber(number, {
@@ -60,18 +78,28 @@ class App extends Component {
   }
 
   checkWin() {
-    console.log("Current calls = ",this.state.currentCalls);
-    console.log("total calls = ",this.state.totalCalls);
+    console.log("Current calls = ", this.state.currentCalls);
+    console.log("total calls = ", this.state.totalCalls);
     if (this.state.currentCalls === this.state.totalCalls - 1) {
       this.state.ContractInstance.getLastWinNumber.call().then((result) => {
         if (result != null) {
           const winnum = parseInt(result);
-          if(this.state.numbersChoose.includes(winnum)) {
+          if (this.state.numbersChoose.includes(winnum)) {
             let str = "Winning Number is " + winnum + "! Congratulation! You Win!!!";
-            alert(str)
-          }else{
+            this.setState({
+              isShowAlert: true,
+              alertBoxType: 'success',
+              alertBoxTitle: 'You Win!',
+              alertBoxContent: str,
+            })
+          } else {
             let str = "Winning Number is " + winnum + "! Sorry, but can try again!!!";
-            alert(str)
+            this.setState({
+              isShowAlert: true,
+              alertBoxType: 'danger',
+              alertBoxTitle: 'You Lose!',
+              alertBoxContent: str,
+            })
           }
           this.setState({ numbersChoose: [] });
         }
@@ -166,7 +194,7 @@ class App extends Component {
     virtLotto.setProvider(this.state.web3.currentProvider)
     virtLotto.deployed().then((instance) => {
       this.setState({
-        ContractInstance : instance
+        ContractInstance: instance
       })
       this.watchEvents();
       this.updateState()
@@ -176,26 +204,26 @@ class App extends Component {
   watchEvents() {
     let eventString = this.state.ContractInstance.LogString();
     eventString.watch((error, result) => {
-        if (!error) {
-            const value = result.args.value;
-            //console.log("Log String = ",value);
-            console.log("Log String = ", this.state.web3.toAscii(value.replace(/\0[\s\S]*$/g,'')));
-        }
+      if (!error) {
+        const value = result.args.value;
+        //console.log("Log String = ",value);
+        console.log("Log String = ", this.state.web3.toAscii(value.replace(/\0[\s\S]*$/g, '')));
+      }
     });
 
     let eventNumber = this.state.ContractInstance.LogNumber();
-    eventNumber.watch(function(error, result){
-        if (!error)
-            console.log("Log Number = ", result.args.value.toString());
+    eventNumber.watch(function (error, result) {
+      if (!error)
+        console.log("Log Number = ", result.args.value.toString());
     });
 
     let eventAddress = this.state.ContractInstance.LogAddress();
     eventAddress.watch((error, result) => {
-        if (!error) {
-            const value = result.args.value;
-            //console.log("Log String = ",value);
-            console.log("Log Address = ", value);
-        }
+      if (!error) {
+        const value = result.args.value;
+        //console.log("Log String = ",value);
+        console.log("Log Address = ", value);
+      }
     });
   }
 
@@ -209,10 +237,17 @@ class App extends Component {
     ))
   }
 
+  hideAlert() {
+    this.setState({
+      isShowAlert: false
+    })
+  } 
+
   render() {
+
     return (
       <div className="main-container">
-        <h1>Bet for your best number and win huge amounts of Ether</h1>
+        <h1>Welcome to Harry's Virtual Casino!</h1>
 
         <div className="block">
           <b>Total Calls:</b> &nbsp;
@@ -239,14 +274,14 @@ class App extends Component {
             <span>{this.state.minimumBet} ether</span>
         </div>
 
-         <div className="block">
+        <div className="block">
           <b>Tickets left:</b> &nbsp;
             <span>{4 - this.state.currentTicket}</span>
         </div>
 
         <hr />
 
-        <h2>Vote for the next number</h2>
+        <h2>Pick any number you want and start to pray :)</h2>
 
         <label>
           <b>How much Ether do you want to bet? <input className="bet-input" ref="ether-bet" type="number" placeholder={this.state.minimumBet} /></b> ether
@@ -258,6 +293,9 @@ class App extends Component {
             this.renderNumber()
           }
         </ul>
+        <SweetAlert show={this.state.isShowAlert} type={this.state.alertBoxType} title={this.state.alertBoxTitle} onConfirm={ () => {this.hideAlert()} }>
+          {this.state.alertBoxContent}
+        </SweetAlert>
       </div>
     )
   }
