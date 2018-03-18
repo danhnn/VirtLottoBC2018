@@ -1,3 +1,6 @@
 - Constant keyword is used to mark that function is no required gas cause it just return value from contrac state only.
 
 - Why this.state.ContractInstance.getMinimumBet.call() return promise ? In Lab1, it returns a value
+
+- Don't know why to set defaul account here
+this.state.web3.eth.defaultAccount = this.state.web3.eth.accounts[0]

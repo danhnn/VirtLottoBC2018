@@ -18,6 +18,10 @@ contract VirtLotto {
 
   uint8 MAX_TICKETS = 4;
 
+  event LogData(
+        uint _value
+  );
+
   function VirtLotto(uint _minimumBet, uint _totalCalls) public {
     owner = msg.sender;
     minimumBet = _minimumBet;
@@ -40,6 +44,10 @@ contract VirtLotto {
     return currentCalls;
   }
 
+  function checkMinimumBet(uint value) public view {
+    require (value >= minimumBet);
+  }
+
   function checkNumberBet(uint number) public pure {
     require (number >= 1 && number <= 10);
   }
@@ -48,18 +56,22 @@ contract VirtLotto {
     require (betMap[target].length < MAX_TICKETS);
   }
 
-  function () payable private {}
+  function () payable public {}
 
-  function pickNumber(uint number) payable public {
+  function pickNumber(uint number) public payable {
+    LogData(number);
+
     checkNumberBet(number);
+    checkMinimumBet(msg.value);
     checkTicketsPick(msg.sender);
-
-    this.transfer(msg.value); // this represent for contract address pointer. Transfer means we subtract amount of caller.`
+    
+    //this.transfer(msg.value); // this represent for contract address pointer. Transfer means we subtract amount of caller.`
     betMap[msg.sender].push (number);
     totalBetValue += number;
     addAddressToPickers(msg.sender);
 
     currentCalls += 1;
+    
     if (currentCalls == totalCalls) {
       getWinners();
       resetState();

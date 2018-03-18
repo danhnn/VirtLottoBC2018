@@ -23,7 +23,7 @@ class App extends Component {
   }
 
   voteNumber(number) {
-    console.log(number)
+    console.log("Vote for: ",number)
     let bet = this.refs['ether-bet'].value
     if (!bet) bet = 0.1
 
@@ -31,15 +31,19 @@ class App extends Component {
       alert('You must bet more than the minimum')
       this.removeOtherNumberSelected();
     } else {
+      const address = this.state.web3.eth.accounts[0];
+      const etherBet = this.state.web3.toWei(bet, 'ether')
       console.log("Address = ",this.state.web3.eth.accounts[0])
       console.log("Bet = ",bet)
       this.state.ContractInstance.pickNumber(number, {
-        gas: 300000,
-        from: this.state.web3.eth.accounts[0],
-        value: this.state.web3.toWei(bet, 'finney')
-      }, (err, result) => {
-        console.log("Pick error = ", err)
+        from: address,
+        value: etherBet
+      }).then((result) => {
+        console.log("pick result = ", result)
+        
         this.removeOtherNumberSelected();
+      }).catch((error) => {
+        console.log("pick error = ", error)
       })
     }
   }
@@ -100,6 +104,8 @@ class App extends Component {
         this.setState({
           web3: results.web3
         })
+        // Don't know why to set defaul account here
+        this.state.web3.eth.defaultAccount = this.state.web3.eth.accounts[0]
         // Instantiate contract once web3 provided.
         this.instantiateContract()
       })
@@ -116,8 +122,21 @@ class App extends Component {
       this.setState({
         ContractInstance : instance
       })
+      this.watchEvents();
       this.updateState()
     })
+  }
+
+  watchEvents() {
+    let event = this.state.ContractInstance.LogData();
+    // watch for changes
+    event.watch(function(error, result){
+        // result will contain various information
+        // including the argumets given to the Deposit
+        // call.
+        if (!error)
+            console.log("Log data = ", result.args._value.toString());
+    });
   }
 
   renderNumber() {
