@@ -4,3 +4,7 @@
 
 - Don't know why to set defaul account here
 this.state.web3.eth.defaultAccount = this.state.web3.eth.accounts[0]
+
+- Why we need to restart Ganache everytime we want to deploy our smart contract again ? Cause the change not save ( let say we want to log more things )
+
+- Why metamask cannot use address that we import before ? Does it mean we need to delete all of imported address and try re-import ?

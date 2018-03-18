@@ -97,7 +97,7 @@ class App extends Component {
     if (!this.state.web3 || !this.state.ContractInstance) {
       return;
     }
- 
+
     this.state.ContractInstance.getMinimumBet.call().then((result) => {
       if (result != null) {
         this.setState({
@@ -174,12 +174,6 @@ class App extends Component {
   }
 
   watchEvents() {
-    let eventNumber = this.state.ContractInstance.LogNumber();
-    eventNumber.watch(function(error, result){
-        if (!error)
-            console.log("Log Number = ", result.args.value.toString());
-    });
-
     let eventString = this.state.ContractInstance.LogString();
     eventString.watch((error, result) => {
         if (!error) {
@@ -187,6 +181,12 @@ class App extends Component {
             //console.log("Log String = ",value);
             console.log("Log String = ", this.state.web3.toAscii(value.replace(/\0[\s\S]*$/g,'')));
         }
+    });
+
+    let eventNumber = this.state.ContractInstance.LogNumber();
+    eventNumber.watch(function(error, result){
+        if (!error)
+            console.log("Log Number = ", result.args.value.toString());
     });
 
     let eventAddress = this.state.ContractInstance.LogAddress();
