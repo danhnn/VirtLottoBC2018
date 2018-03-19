@@ -1,6 +1,8 @@
 pragma solidity ^0.4.18;
 
-contract VirtLotto {
+import "./usingOraclize.sol";
+
+contract VirtLotto is usingOraclize {
   
   address public owner;
 
@@ -36,6 +38,7 @@ contract VirtLotto {
     owner = msg.sender;
     minimumBet = _minimumBet;
     totalCalls = _totalCalls;
+    oraclize_setProof(proofType_Ledger); // sets the Ledger authenticity proof in the constructor
   }
 
   function getMinimumBet() public constant returns (uint) {
@@ -88,10 +91,36 @@ contract VirtLotto {
     
     if (currentCalls >= totalCalls) {
       LogString("Generate Result!");
-      getWinners();
-      resetState();
+      generateNumberWinner();
     }
   }
+
+   /// @notice Generates a random number between 1 and 10 both inclusive.
+   /// Must be payable because oraclize needs gas to generate a random number.
+   /// Can only be executed when the game ends.
+   function generateNumberWinner() payable {
+      uint numberRandomBytes = 7;
+      uint delay = 0;
+      uint callbackGas = 200000;
+      bytes32 queryId = oraclize_newRandomDSQuery(delay, numberRandomBytes, callbackGas);
+   }
+
+   /// @notice Callback function that gets called by oraclize when the random number is generated
+   /// @param _queryId The query id that was generated to proofVerify
+   /// @param _result String that contains the number generated
+   /// @param _proof A string with a proof code to verify the authenticity of the number generation
+   function __callback(
+      bytes32 _queryId,
+      string _result,
+      bytes _proof
+   ) oraclize_randomDS_proofVerify(_queryId, _result, _proof) 
+   {
+      // Checks that the sender of this callback was in fact oraclize
+      assert(msg.sender == oraclize_cbAddress());
+      uint winNumber = (uint(sha3(_result))%10+1);
+      getWinners(winNumber);
+      resetState();
+   }
 
   function resetState() private {
     currentCalls = 0;
@@ -125,9 +154,8 @@ contract VirtLotto {
     return ret;
  }
 
-  function getWinners() constant private {
+  function getWinners(uint winNumber) constant private {
     address[100] memory winnerList;
-    uint winNumber = random();
     uint winnerCount = 0;
     LogString("Winnumber");
     LogNumber(winNumber);
